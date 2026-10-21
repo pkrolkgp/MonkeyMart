@@ -257,3 +257,14 @@ W prywatnym artefakcie konwersacji przygotowano komplet pomocniczych plików lok
 - [ ] Włączyć rzeczywiste 4-osobowe CO-OP przez podłączenie serwera i klienta z `multiplayer/` do odtworzonego `GameState.lua` oraz autorytatywnego stanu sklepu.
 
 Przygotowany kod i archiwa pozostają w lokalnej paczce do pobrania w konwersacji; zawierają oryginalne materiały niepublikowane na GitHubie z uwagi na prawa osób trzecich. Status: **autonomiczny launcher oryginału + eksperymentalny builder źródeł; gra z multiplayerem NIE jest ukończona**.
+
+
+## 17. Problemy kompilacji lokalnej (22 października 2026)
+
+Z logu użytkownika `02_ODBUDUJ_PROJEKT_DEFOLD.command`:
+
+1. `UninitializedMessageException: Message missing required fields: skin` — w trzech z pięciu odtworzonych deskryptorów `.spinemodel` brak jawnego `skin`. Oficjalny `defold-spine/commonsrc/spine_ddf.proto` z wersji 3.0.0 określa `skin` jako wymagany. W źródłowych `effects.spinejson` i `props.spinejson` występuje skórka `default`; przygotowano lokalny patch nadający `skin: "default"`.
+2. `ExtenderClient status 501 /build_async/x86_64-osx/...` — Defold oficjalnie **usunął 14.09.2026 wsparcie buildowania natywnych projektów Windows/macOS dla wersji silnika starszych niż 1.12.1** (forum.defold.com/t/build-server-dropping-windows-macos-support-for-older-engine-versions-older-than-1-12-1/83210). Lokalny builder 1.8.0 nie może wykonać tego etapu na publicznym serwerze.
+3. W prywatnym pliku ZIP w konwersacji udostępniono pomocniczy `03_NAPRAW_I_KOMPILUJ.command`, który poprawia brakujące pola (bez ponownej ekstrakcji i bez nadpisania pozostałego kodu), pobiera Bob 1.12.1, używa OpenJDK 25 i zapisuje log `BUILD-1121.log`. Kod łatki dla modeli sprawdzono lokalnym testem (5 modeli, 3 poprawki, ponowne uruchomienie bez zmian).
+
+**Stan:** zgodność rozszerzenia Spine 3.0.0 i odzyskanych starych zasobów z Defold 1.12.1 wymaga jeszcze rzeczywistego sprawdzenia kompilacji na Macu. Nie ogłaszamy sukcesu kompilacji przed otrzymaniem logu. Projekt nadal nie zawiera działającego połączenia pełnej gry z multiplayerem.
