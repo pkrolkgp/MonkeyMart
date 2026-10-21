@@ -217,7 +217,9 @@ def run():
             f.write(report_text)
     print(f"Manifest {total}; in ZIP {zipped}; verified {verified}; encrypted-unverified {len(encrypted)}; errors {len(errors)}")
     print(f"Previously missing dependencies recovered: {found}/18")
-    print("GitHub Actions: open job Summary to see full report.")\n    if encrypted:\n        print("Note: encrypted debug scripts require a separate decoder; this is not an audit failure.")
+    print("GitHub Actions: open job Summary to see full report.")
+    if encrypted:
+        print("Note: encrypted debug scripts require a separate decoder; this is not an audit failure.")
     return 1 if errors else 0
 
 if __name__ == "__main__":
