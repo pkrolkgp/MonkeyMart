@@ -1,4 +1,4 @@
-# Monkey Mart CO-OP — plan projektu (wersja 0.3)
+# Monkey Mart CO-OP — plan projektu (wersja 0.4)
 
 > **Status:** koncepcja. To plan, nie gotowa implementacja multiplayer.
 > **Główna idea:** od 1 do 4 graczy wspólnie prowadzi **jeden sklep**, współdzieli pieniądze, stany magazynowe, maszyny, klientów i ulepszenia.
@@ -161,3 +161,28 @@ Skopiuj wiersz i zmień opis. Pomysły wcale nie muszą być techniczne.
 - [ ] Zrealizować M09 (zamówienia specjalne) i M12 (głosowania) po ustabilizowaniu wspólnej ekonomii.
 
 **Uwaga:** obecne założenia silnika/architektury w sekcji 5 były propozycją sprzed odzyskania Lua. Po audycie pierwszą opcją jest odbudowa projektu **Defold + Lua**. Wariant nowego autorskiego projektu Phaser/TypeScript pozostaje alternatywą, jeśli odbudowa lub uzyskanie praw nie okażą się możliwe.
+
+
+## 11. Podjęta decyzja: rozwój oryginalnej gry, nie nowy klon (21.10.2026)
+
+**Wymaganie użytkownika:** wykorzystać maksymalnie cały istniejący kod i zasoby Monkey Mart, odzyskać edytowalny projekt Defold, a następnie **dodać jedynie funkcje kooperacji 1–4 graczy**. Nie zastępować oryginalnej gry nową implementacją Phaser ani grafikami zastępczymi. Dotychczasowy `coop_stage1` jest wyłącznie techniczną makietą do testowania niezależnego sterowania, a nie docelową grą.
+
+### Aktualny stan
+
+- Otrzymano archiwum z wyodrębnionymi zasobami Defold: 50 plików `.lua`, 15 `.script`, 10 `.gui_script`, 1 `.render_script`, 19 `.collectionc`, 135 `.goc` i 5 `.texturec`.
+- Kod Lua oraz skrypty zdarzeń są odzyskane w czytelnej formie; część scen, obiektów, atlasów, GUI, animacji Spine i zależności ma nadal format skompilowany.
+- Import 76 plików Lua/skryptów do `MonkeyMart-COOP` zakończył się powodzeniem.
+- Gra startuje w technicznej scenie testowej z dwoma prostokątnymi znacznikami postaci. **Odtworzenie oryginalnego sklepu nadal nie jest ukończone.**
+
+### Nowa kolejność działań (zastępuje sugestie przepisywania gry od podstaw)
+
+- [ ] Potwierdzić uprawnienia do używania, modyfikowania i — jeśli planowana — redystrybucji oryginalnej gry i jej zasobów. Monkey Mart jest autorstwa TinyDobbins; publiczna dostępność plików nie daje automatycznie licencji.
+- [ ] Przenieść odzyskane źródła do repozytorium z odpowiednim dostępem **tylko po potwierdzeniu uprawnień**; nie publikować odzyskanego kodu w obecnym publicznym repo bez takiego potwierdzenia.
+- [ ] Odzyskać edytowalne sceny (`.collection`), obiekty (`.go`), GUI (`.gui`), atlasy i Spine w istniejących ścieżkach zależności.
+- [ ] Podpiąć odtworzony `game.project`, render, wejście, skrypty i zasoby; uzyskać build offline o wyglądzie i mechanice oryginału.
+- [ ] Zweryfikować zachowanie oryginału: ruch, zbiór towarów, klient, kasa, ulepszenia, NPC, animacje i zapisy.
+- [ ] Dodać drugą, następnie cztery **prawdziwe** postacie graczy bez zmiany podstawowych mechanik sklepu.
+- [ ] Wprowadzić autorytatywny stan pokoju i sieciową synchronizację ruchu, towarów, transakcji oraz zapisu, z dołączaniem w trakcie.
+- [ ] Dodać zatwierdzone funkcje M09, M12, M13, M18 na bazie już działającej gry.
+
+**Defold + Lua pozostaje docelowym silnikiem.** Nie deklarujemy, że pełne odtworzenie ze skompilowanego builda jest gwarantowane.
