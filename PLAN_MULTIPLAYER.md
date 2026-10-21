@@ -215,3 +215,15 @@ Użytkownik dostarczył `MonkeyMart-edytowalny.zip`. Przeprowadzono kontrolę za
 - [ ] Uruchomić budowę projektu i dopiero wtedy rozpocząć integrację multiplayer.
 
 **Zasada:** kod i zasoby oryginalnej gry pozostają wyłącznie w lokalnych/prywatnych artefaktach; w publicznym GitHubie zapisujemy tylko plan i własne narzędzia po wyjaśnieniu praw do zasobów.
+
+
+## 14. Automatyzacja i transport multiplayer (22 października 2026)
+
+- [x] Naprawiono GitHub Actions: dwa zaszyfrowane skrypty debug w `resources.zip` są teraz zgłaszane jako **niezweryfikowane** zamiast błędów. [Udany audyt](https://github.com/pkrolkgp/MonkeyMart/actions/runs/39688707264). 33 zasoby zweryfikowane, dwa zaszyfrowane, 7 z 18 brakujących zależności odnalezionych.
+- [x] Własny, niezależny od kodu oryginalnej gry transport `multiplayer/server`: pokoje do 4 osób, dołączanie w trakcie, snapshot pozycji i skinów, ruch z numerami sekwencyjnymi, obsługa rozłączeń.
+- [x] Testy jednostkowe i rzeczywisty test połączeń WebSocket (utworzenie pokoju, dołączenie, ruch, piąty gracz odrzucony). [Zielone GitHub Actions](https://github.com/pkrolkgp/MonkeyMart/actions/runs/39689378915).
+- [ ] Główna blokada: wciąż brak kompilowalnego źródłowego projektu Defold po odzyskaniu oryginalnej gry. Część atlasów, Spine i kod pomocniczy wymagają odbudowy.
+- [ ] Połączyć transport z istniejącymi `GameState.lua` i `Player.lua` oraz stworzyć serwer autorytatywny dla towarów, gotówki, klientów i zakupów.
+- [ ] Testy użytkowe oraz dopiero po nich udostępnienie wersji multiplayer do pobrania.
+
+Nie uznawać zielonego audytu ani testów transportu za ukończoną grę. Nie ma jeszcze instalatora/buildu gry multiplayer.
