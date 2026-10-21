@@ -227,3 +227,15 @@ Użytkownik dostarczył `MonkeyMart-edytowalny.zip`. Przeprowadzono kontrolę za
 - [ ] Testy użytkowe oraz dopiero po nich udostępnienie wersji multiplayer do pobrania.
 
 Nie uznawać zielonego audytu ani testów transportu za ukończoną grę. Nie ma jeszcze instalatora/buildu gry multiplayer.
+
+
+## 15. Kod współdzielonego magazynu i klient Defold (22.10.2026)
+
+- [x] **PR #1, merged:** serwerowy wspólny magazyn `multiplayer/server/store.js` i kontrola ekwipunków poszczególnych graczy; atomowe operacje `collect`/`drop` i idempotentne `requestId`.
+- [x] Testy: dwaj gracze nie pobiorą tej samej ostatniej sztuki, zwrot zapasów po rozłączeniu, dołączanie w trakcie, walidacja wartości i ochrona przed błędami nazw produktów.
+- [x] **PR #2, merged:** moduł `multiplayer/defold/coop_client.lua` wykorzystujący oficjalne `extension-websocket` w Defold.
+- [x] Nowy job CI sprawdza klienta Lua 5.4 z mockowanymi zdarzeniami WebSocket; testy Node.js i Lua przeszły (uruchomienie **39691442259**).
+- [ ] Połączyć prawdziwy `GameState.lua` z serwerem: wiązanie `player_moved` z lokalnymi postaciami, `collectFood`/`dropFood` ze wspólną transakcją, synchronizacja kas i NPC.
+- [ ] Nadal nie ma kompilowalnego projektu źródłowego **oryginalnej** gry (brakujące atlasy, Spine, sceny z Live Update i materiały). Brak gotowej wersji do pobrania.
+
+**Granica między kodem własnym a zasobami oryginalnej gry:** w publicznym GitHubie są wyłącznie niezależne komponenty sieciowe, CI i dokumentacja, bez dekompilowanych źródeł/grafiki. Właściwa integracja wymaga środowiska z prawami do modyfikowania i dystrybucji Monkey Mart. Stan magazynu jest obecnie konfigurowany wyłącznie po stronie serwera; domyślnie pusty, zatem nie jest jeszcze odzwierciedleniem realnych towarów gry.
