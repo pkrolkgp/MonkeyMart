@@ -1,0 +1,42 @@
+name: Monkey Mart - multiplayer transport tests
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'multiplayer/server/**'
+      - '.github/workflows/coop-transport.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install server dependencies
+        working-directory: multiplayer/server
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Unit tests
+        working-directory: multiplayer/server
+        run: npm test
+      - name: Validate transport server can start
+        working-directory: multiplayer/server
+        run: |
+          node server.js > /tmp/monkeymart-server.log 2>&1 &
+          echo $! > /tmp/monkeymart-pid
+          trap 'kill $(cat /tmp/monkeymart-pid) 2>/dev/null || true' EXIT
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:8080/ > /tmp/health.json; then
+              cat /tmp/health.json
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/monkeymart-server.log
+          exit 1
