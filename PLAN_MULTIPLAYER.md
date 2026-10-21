@@ -1,4 +1,4 @@
-# Monkey Mart CO-OP — plan projektu (wersja 0.2)
+# Monkey Mart CO-OP — plan projektu (wersja 0.3)
 
 > **Status:** koncepcja. To plan, nie gotowa implementacja multiplayer.
 > **Główna idea:** od 1 do 4 graczy wspólnie prowadzi **jeden sklep**, współdzieli pieniądze, stany magazynowe, maszyny, klientów i ulepszenia.
@@ -131,3 +131,33 @@ Skopiuj wiersz i zmień opis. Pomysły wcale nie muszą być techniczne.
 
 ---
 **Zasada aktualizacji:** dodajemy nowe propozycje do sekcji 9, omawiamy je, zatwierdzone przenosimy do tabeli mechanik i odpowiedniego etapu. Ten plik jest żywym planem.
+
+
+## 10. Audyt odzyskanego kodu — 21 października 2026
+
+**Status:** użytkownik odzyskał i przekazał archiwum `extracted_fixed`. Potwierdzono 50 czytelnych plików `.lua`, 15 `.script` oraz 10 `.gui_script`. **To nie jest jeszcze odbudowany, kompilowalny projekt Defold ani gotowy multiplayer.** Pełniejsze ustalenia zawiera prywatny raport analizy wykonany na przesłanym archiwum; oryginalnych odzyskanych źródeł nie umieszczamy publicznie bez wyjaśnienia praw.
+
+### Fakty potwierdzone analizą
+
+- `main/gamecore/GameState.lua` (7638 linii): wspólny punkt obsługi stanu sklepu, produktów, zakupów i kolejki klientów.
+- `main/gamecore/Player.lua` (1526 linii): logika postaci, ruchu, ekwipunku oraz NPC.
+- `GameState:addPlayer(vId, vX, vY, vData)` już potrafi tworzyć postacie z osobnym ID, ale większość istniejących postaci to **NPC**, a nie gracze sieciowi.
+- Lokalna małpka ma ID `idMy`, a `GameState.controlId` steruje kamerą i wejściem. Trzeba wydzielić niezależne ID gracza na każdym kliencie.
+- `GameState:collectFood` i `dropFood` zmieniają towary lokalnie; docelowo serwer musi zatwierdzać pojedynczą transakcję, zapobiegając duplikacji.
+- `GameState:placeCheckBuy` i `coinmanager.lua` pobierają pieniądze lokalnie; saldo i głosowania M12 wymagają autorytatywnego stanu pokoju.
+- `datamanager.lua` używa lokalnych zapisów Defold `defsave`; multiplayer potrzebuje osobnego zapisu wspólnego sklepu.
+- `main/gamecore/dodik.script` stosuje `spine.set_skin`; zdekodowany `images/spine/monkeys.spinejsonc` zawiera 17 nazwanych skinów `monkey1`–`monkey17` — przydatne dla M18.
+- Pliki `.collectionc`, `.goc`, `.guic`, tekstury oraz pozostałe zależności są nadal materiałami skompilowanymi. Przed modyfikacjami sieciowymi trzeba odtworzyć oryginalne sceny/zasoby lub uzyskać oryginalny projekt i **uruchomić niezmienioną wersję z Defold Editora**.
+
+### Najbliższe zadania, wynikające z audytu
+
+- [ ] Ustalić uprawnienia do modyfikacji i ewentualnej publikacji kodu/zasobów.
+- [ ] Odzyskać edytowalną scenę jednego sklepu wraz z atlasami, Spine, wejściem i konfiguracją; uruchomić działającą wersję offline w Defold Editorze.
+- [ ] Oddzielić lokalne wejście, prezentację, symulację świata i trwały zapis.
+- [ ] Zidentyfikować wszystkie mutacje stanów pieniędzy, regałów, ekwipunków i zakupów; dodać jedną warstwę walidacji transakcji.
+- [ ] Uruchomić 2 niezależnie sterowane postacie na jednej mapie bez internetu jako test podstawy multiplayer.
+- [ ] Dodać pokoje WebSocket, autorytatywny serwer oraz synchronizację ruchu i transakcji.
+- [ ] Rozszerzyć do 4 graczy, dołączania w trakcie (M13), oddzielnych skinów (M18) i zapisu postępu.
+- [ ] Zrealizować M09 (zamówienia specjalne) i M12 (głosowania) po ustabilizowaniu wspólnej ekonomii.
+
+**Uwaga:** obecne założenia silnika/architektury w sekcji 5 były propozycją sprzed odzyskania Lua. Po audycie pierwszą opcją jest odbudowa projektu **Defold + Lua**. Wariant nowego autorskiego projektu Phaser/TypeScript pozostaje alternatywą, jeśli odbudowa lub uzyskanie praw nie okażą się możliwe.
