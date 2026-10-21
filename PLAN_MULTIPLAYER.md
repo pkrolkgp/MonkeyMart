@@ -199,3 +199,19 @@ Skopiuj wiersz i zmień opis. Pomysły wcale nie muszą być techniczne.
 - [ ] Dopiero potem dodanie współdzielonego stanu sklepu i multiplayer 1–4 graczy.
 
 **Uwaga:** zero błędów dekodowania oznacza poprawną operację protobuf, a nie poprawność plików z punktu widzenia Defold Edytora. Źródła odzyskane z oryginalnej gry nie są publikowane w repozytorium bez ustalenia odpowiednich praw.
+
+
+## 13. Audyt przesłanego projektu edytowalnego (22.10.2026)
+
+Użytkownik dostarczył `MonkeyMart-edytowalny.zip`. Przeprowadzono kontrolę zawartości odzyskanego projektu Defold i przygotowano lokalną, **jeszcze niekompilowalną** kopię roboczą bez zastępowania oryginalnej rozgrywki atrapami.
+
+- [x] Zidentyfikowano 19 scen `.collection`, 135 obiektów `.go`, 10 interfejsów `.gui` i 115 komponentów `.sprite`.
+- [x] Usunięto z kopii roboczej 47 bloków `component_types` i 209 bloków `property_decls` będących polami runtime-only.
+- [x] Skorygowano 128 referencji wbudowanych materiałów z `.materialc` do `.material`.
+- [x] Ustawiono rozpoznaną oryginalną scenę startową `/main/controller.collection` w testowym `game.project` (tylko do dalszej walidacji).
+- [ ] **18 różnych odwołań do zasobów nadal nierozwiązanych**, w tym pięć skompilowanych atlasów `.texturesetc`, pięć modeli Spine, oryginalna czcionka i brakujące kolekcje.
+- [ ] Odtworzyć atlasy z istniejących `.texturec`/`.texturesetc`, zachowując nazwy oryginalnych animacji; uwzględnić wersję formatu używaną w odzyskanym buildzie.
+- [ ] Zweryfikować pełne obrazy Spine (oryginalny plik `.spinejson` deklaruje wersję **4.1.24**, a współczesne rozszerzenie może używać Spine 4.2) i odzyskać brakujące kolekcje.
+- [ ] Uruchomić budowę projektu i dopiero wtedy rozpocząć integrację multiplayer.
+
+**Zasada:** kod i zasoby oryginalnej gry pozostają wyłącznie w lokalnych/prywatnych artefaktach; w publicznym GitHubie zapisujemy tylko plan i własne narzędzia po wyjaśnieniu praw do zasobów.
