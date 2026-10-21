@@ -1,0 +1,33 @@
+name: Monkey Mart - audit Live Update resources
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - resources.zip
+      - tools/audit_liveupdate.py
+      - .github/workflows/liveupdate-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-liveupdate:
+    name: Decode manifest and check 18 missing assets
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download repository
+        uses: actions/checkout@v4
+
+      - name: Verify Live Update contents
+        run: python3 tools/audit_liveupdate.py
+
+      - name: Save public metadata report (not extracted resources)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: monkeymart-liveupdate-audit
+          path: reports/
+          if-no-files-found: ignore
+          retention-days: 14
