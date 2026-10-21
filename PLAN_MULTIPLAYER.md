@@ -186,3 +186,16 @@ Skopiuj wiersz i zmień opis. Pomysły wcale nie muszą być techniczne.
 - [ ] Dodać zatwierdzone funkcje M09, M12, M13, M18 na bazie już działającej gry.
 
 **Defold + Lua pozostaje docelowym silnikiem.** Nie deklarujemy, że pełne odtworzenie ze skompilowanego builda jest gwarantowane.
+
+## 12. Postęp konwersji protobuf (21 października 2026)
+
+- [x] Rozpakowanie oryginalnego archiwum Defold.
+- [x] Odzyskanie 76 skryptów i modułów (50 `.lua`, 15 `.script`, 10 `.gui_script`, 1 `.render_script`).
+- [x] Wstępna tekstowa konwersja 303 zasobów protobuf.
+- [x] Poprawa definicji `dmSoundDDF.SoundDesc` oraz `dmCollectionProxyDDF.CollectionProxyDesc` — **29 dodatkowych plików, 0 zgłoszonych błędów**.
+- [ ] Audyt wszystkich **332 kandydatów** do edycji: ścieżki, referencje, pola tylko dla runtime, powiązania między obiektami.
+- [ ] Odbudowa atlasów, materiałów, scen Spine i pozostałych zależności.
+- [ ] Zweryfikowanie czytelności w Defold Editorze oraz uruchomienie **oryginalnej** mechaniki offline.
+- [ ] Dopiero potem dodanie współdzielonego stanu sklepu i multiplayer 1–4 graczy.
+
+**Uwaga:** zero błędów dekodowania oznacza poprawną operację protobuf, a nie poprawność plików z punktu widzenia Defold Edytora. Źródła odzyskane z oryginalnej gry nie są publikowane w repozytorium bez ustalenia odpowiednich praw.
