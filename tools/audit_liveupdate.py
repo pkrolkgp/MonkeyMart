@@ -183,18 +183,21 @@ def run():
     total = len(resources)
     verified = sum(x["status"] == "verified" for x in resources)
     zipped = sum(x["in_zip"] for x in resources)
-    errors = [x for x in resources if x["in_zip"] and x["status"] != "verified"]
+    # Not every non-verified file is an error. Two optional debug scripts are
+    # encrypted by the game build; a metadata-only audit cannot verify them.
+    errors = [x for x in resources if x["in_zip"] and x["status"].startswith("ERROR:")]
+    encrypted = [x for x in resources if x["in_zip"] and x["status"].startswith("encrypted;")]
     found = sum(bool(x["found"]) for x in compared)
     folder = Path("reports")
     folder.mkdir(exist_ok=True)
     report = {"manifest_count": total, "zip_count": zipped, "verified": verified,
-              "errors": len(errors), "resolved_out_of_18": found,
+              "errors": len(errors), "encrypted_unverified": len(encrypted), "resolved_out_of_18": found,
               "missing_dependencies": compared, "resources": resources}
     (folder / "liveupdate.json").write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     backtick = chr(96)
     md = ["# Monkey Mart: audyt resources.zip", "",
           "Bez publikowania odzyskanych plików gry.", "",
-          f"**Manifest:** {total} | **W ZIP:** {zipped} | **Zweryfikowane:** {verified} | **Problemy:** {len(errors)}",
+          f"**Manifest:** {total} | **W ZIP:** {zipped} | **Zweryfikowane:** {verified} | **Zaszyfrowane (bez kontroli treści):** {len(encrypted)} | **Błędy:** {len(errors)}",
           "", f"**Z 18 brakujących zależności znaleziono: {found}.**",
           "", "## Zależności", "",
           "| Brakująca ścieżka | Jest w Live Update? |", "|---|---|"]
@@ -212,9 +215,9 @@ def run():
     if summary_file:
         with open(summary_file, "a", encoding="utf-8") as f:
             f.write(report_text)
-    print(f"Manifest {total}; in ZIP {zipped}; verified {verified}; errors {len(errors)}")
+    print(f"Manifest {total}; in ZIP {zipped}; verified {verified}; encrypted-unverified {len(encrypted)}; errors {len(errors)}")
     print(f"Previously missing dependencies recovered: {found}/18")
-    print("GitHub Actions: open job Summary to see full report.")
+    print("GitHub Actions: open job Summary to see full report.")\n    if encrypted:\n        print("Note: encrypted debug scripts require a separate decoder; this is not an audit failure.")
     return 1 if errors else 0
 
 if __name__ == "__main__":
