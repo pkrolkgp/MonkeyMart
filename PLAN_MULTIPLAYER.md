@@ -239,3 +239,21 @@ Nie uznawać zielonego audytu ani testów transportu za ukończoną grę. Nie ma
 - [ ] Nadal nie ma kompilowalnego projektu źródłowego **oryginalnej** gry (brakujące atlasy, Spine, sceny z Live Update i materiały). Brak gotowej wersji do pobrania.
 
 **Granica między kodem własnym a zasobami oryginalnej gry:** w publicznym GitHubie są wyłącznie niezależne komponenty sieciowe, CI i dokumentacja, bez dekompilowanych źródeł/grafiki. Właściwa integracja wymaga środowiska z prawami do modyfikowania i dystrybucji Monkey Mart. Stan magazynu jest obecnie konfigurowany wyłącznie po stronie serwera; domyślnie pusty, zatem nie jest jeszcze odzwierciedleniem realnych towarów gry.
+
+
+## 16. Lokalny zestaw odbudowy Defold na macOS (22.10.2026)
+
+W prywatnym artefakcie konwersacji przygotowano komplet pomocniczych plików lokalnych, bez publikacji odzyskanej zawartości na publicznym GitHubie:
+
+- [x] Launcher skompilowanej oryginalnej wersji HTML5 na lokalnym serwerze macOS; test HTTP narzędzia startowego przeszedł, lecz rozgrywka w prawdziwej przeglądarce nie była tu testowana. **Nie jest to wersja multiplayer.**
+- [x] Automat odbudowy projektu źródłowego Defold oparty na 76 odzyskanych skryptach, 19 scenach i 135 obiektach.
+- [x] Odczytano metadane pięciu źródłowych atlasów: **1216 regionów obrazu, 976 oryginalnych nazw animacji**; algorytm mapowania UV zweryfikowano na rzeczywistych metadanych. Konwersja obrazu z Basis do PNG wymaga `basisu` na Macu i nie została tu uruchomiona.
+- [x] Przygotowano przywrócenie dziewięciu skompilowanych deskryptorów modeli/scen Spine.
+- [x] Odtworzono **oryginalne 36 przypisań sterowania** z `input/game.input_bindingc`, w tym klawiaturę, mysz, gamepad i dotyk. Zastępują wcześniejszy uproszczony plik input.
+- [x] Przywrócono własny renderer `orthographic/render/orthographic.render` zamiast domyślnego renderera.
+- [x] Dobrano historycznie zgodną parę narzędzi **Defold 1.8.0 (2024-04)** + **extension-spine 3.0.0 (2024-04)**, obsługującą format Spine 4.1 z oryginalnego builda.
+- [ ] Przejść pełne `resolve distclean build bundle` z Bob 1.8.0 na Macu. Kompilacja nie została potwierdzona, więc nie wolno oznaczać projektu jako działającego.
+- [ ] Przetestować prawdziwą oryginalną grę po odbudowie, przeprowadzić poprawki logiki i brakujących assetów.
+- [ ] Włączyć rzeczywiste 4-osobowe CO-OP przez podłączenie serwera i klienta z `multiplayer/` do odtworzonego `GameState.lua` oraz autorytatywnego stanu sklepu.
+
+Przygotowany kod i archiwa pozostają w lokalnej paczce do pobrania w konwersacji; zawierają oryginalne materiały niepublikowane na GitHubie z uwagi na prawa osób trzecich. Status: **autonomiczny launcher oryginału + eksperymentalny builder źródeł; gra z multiplayerem NIE jest ukończona**.
