@@ -1,0 +1,39 @@
+# Monkey Mart — transport multiplayer (wersja robocza)
+
+Niezależny kod serwera WebSocket do późniejszej integracji z oryginalnym Defold/Lua.
+**To nie jest jeszcze grywalna wersja Monkey Mart.** Nie zawiera skopiowanych skryptów
+ani grafik i nie podmienia oryginalnej rozgrywki.
+
+## Obsługiwane
+
+- Pokoje do 4 osób z unikatowymi kodami.
+- Dołączanie w trakcie i synchronizacja pozycji / wyglądu (`monkey1`–`monkey17`).
+- Rozłączanie graczy i usuwanie pustych pokoi.
+- Odrzucanie przestarzałych wiadomości o ruchu (sequence number).
+- Testy jednostkowe i smoke test serwera w GitHub Actions.
+
+## Brakujące prace
+
+- Integracja protokołu z istniejącym `GameState.lua` i postaciami Defold.
+- Odtworzenie zasobów Defold i kompilowalnego, oryginalnego projektu.
+- Synchronizacja klientów, sklepu, produktów, pieniędzy, klientów i NPC.
+- Serwer autorytatywny dla interakcji, walidacja kolizji, bezpieczeństwo, TLS i zapis gry.
+
+## Lokalny start (opcjonalnie)
+
+Wejdź do folderu `multiplayer/server`, uruchom `npm install`, a następnie
+`node server.js`. Serwer deweloperski nasłuchuje na `127.0.0.1:8080`.
+
+## Wiadomości JSON WebSocket
+
+- `{"type":"create","name":"Gracz 1","skin":"monkey1"}`
+- `{"type":"join","room":"ABC123","name":"Gracz 2","skin":"monkey2"}`
+- `{"type":"move","x":100,"y":200,"seq":1}`
+- `{"type":"skin","skin":"monkey4"}`
+- `{"type":"snapshot"}`
+
+Odpowiedzi: `welcome` z kodem pokoju, własnym ID i stanem graczy;
+`player_joined`, `player_left`, `player_moved`, `player_skin` i `error`.
+
+Ważne: przesyłanie współrzędnych nie oznacza jeszcze autorytatywnej symulacji
+rozgrywki. Stan sklepu musi być synchronizowany osobno.
