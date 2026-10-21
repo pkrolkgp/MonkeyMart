@@ -37,3 +37,12 @@ Odpowiedzi: `welcome` z kodem pokoju, własnym ID i stanem graczy;
 
 Ważne: przesyłanie współrzędnych nie oznacza jeszcze autorytatywnej symulacji
 rozgrywki. Stan sklepu musi być synchronizowany osobno.
+
+## Synchronizacja zapasów (etap eksperymentalny)
+
+Serwer wspiera teraz **autorytatywne** przenoszenie towarów między wspólnym magazynem a ekwipunkiem graczy: walidowane komunikaty `action` (`collect`/`drop`) z `requestId`, monotoniczną wersję stanu `revision`, odrzucanie niedostępnych towarów, bezpieczne ponawianie i zwrot niesprzedanych towarów przy rozłączeniu. Nowi gracze dostają `store` i `players[].inventory` w `welcome`/`snapshot`.
+
+Zaufana część serwera musi skonfigurować katalog i stan początkowy przez `startServer({ initialStock: { banana: 10 } })`; **klienci nie mogą tworzyć towarów ani pieniędzy**. Bez tej konfiguracji zapasy są puste. Katalog produktów i wartości ekonomiczne wciąż muszą zostać powiązane z oryginalnym `GameState.lua`; to jeszcze nie jest pełna logika sprzedaży Monkey Mart.
+
+Przykładowe żądanie: `{"type":"action","action":"collect","item":"banana","quantity":1,"requestId":"collect-42"}`.
+Serwer odpowiada `action_result`, a pozostałym klientom wysyła `store_changed`; po rozłączeniu może wysłać `store_snapshot`. Serwer nadal nie waliduje odległości gracza od towaru, animacji, klientów, cen ani kolizji. Nie należy wykorzystywać tego jako gotowego mechanizmu zapobiegającego oszustwom.

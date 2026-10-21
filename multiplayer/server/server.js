@@ -4,10 +4,10 @@ const { WebSocketServer, WebSocket } = require("ws");
 const { RoomManager } = require("./room");
 
 function startServer(options = {}) {
-  const manager = new RoomManager();
+  const manager = new RoomManager({ initialStock: options.initialStock || {} });
   const httpServer = http.createServer((req, res) => {
     const body = JSON.stringify({ service: "monkeymart-coop-transport", status: "ok",
-      note: "Transport prototype: original Monkey Mart is not integrated." });
+      note: "Transport and shared-inventory prototype: original Monkey Mart is not integrated." });
     res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
     res.end(body);
   });
@@ -38,7 +38,7 @@ function startServer(options = {}) {
           socket.room = room;
           socket.playerId = player.id;
           send(socket, { type: "welcome", playerId: player.id, ...room.snapshot() });
-          broadcast(room, { type: "player_joined", player: { ...player } }, socket);
+          broadcast(room, { type: "player_joined", player: { ...player, inventory: {} } }, socket);
         } else if (type === "move") {
           if (!socket.room) throw new Error("JOIN_FIRST");
           const changed = socket.room.move(socket.playerId, request.x, request.y, request.seq);
@@ -50,6 +50,11 @@ function startServer(options = {}) {
           if (!socket.room) throw new Error("JOIN_FIRST");
           const player = socket.room.setSkin(socket.playerId, request.skin);
           broadcast(socket.room, { type: "player_skin", playerId: player.id, skin: player.skin });
+        } else if (type === "action") {
+          if (!socket.room) throw new Error("JOIN_FIRST");
+          const result = socket.room.act(socket.playerId, request);
+          send(socket, { type: "action_result", ...result });
+          if (!result.duplicate) broadcast(socket.room, { type: "store_changed", ...result });
         } else if (type === "snapshot") {
           if (!socket.room) throw new Error("JOIN_FIRST");
           send(socket, { type: "snapshot", ...socket.room.snapshot() });
@@ -63,7 +68,11 @@ function startServer(options = {}) {
     socket.on("close", () => {
       const room = socket.room;
       if (room) {
+        const before = room.store.revision;
         room.leave(socket.playerId);
+        if (room.store.revision !== before) {
+          broadcast(room, { type: "store_snapshot", ...room.store.snapshot() });
+        }
         broadcast(room, { type: "player_left", playerId: socket.playerId });
         manager.removeEmpty(room);
         socket.room = null;

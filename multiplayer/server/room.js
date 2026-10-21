@@ -1,5 +1,6 @@
 "use strict";
 const { randomBytes, randomUUID } = require("node:crypto");
+const { Store } = require("./store");
 const MAX_PLAYERS = 4;
 const SKINS = new Set(Array.from({ length: 17 }, (_, i) => "monkey" + (i + 1)));
 
@@ -13,17 +14,24 @@ function finiteCoord(number) {
   return typeof number === "number" && Number.isFinite(number) && Math.abs(number) <= 100000;
 }
 class Room {
-  constructor(code) {
+  constructor(code, { initialStock = {} } = {}) {
     this.code = code;
     this.players = new Map();
+    this.store = new Store({ initialStock });
   }
   join({ name = "Gracz", skin = "monkey1" } = {}) {
     if (this.players.size >= MAX_PLAYERS) throw new Error("ROOM_FULL");
     const player = { id: randomUUID(), name: asName(name), skin: asSkin(skin), x: 0, y: 0, seq: -1 };
+    this.store.addPlayer(player.id);
     this.players.set(player.id, player);
     return player;
   }
-  leave(id) { return this.players.delete(id); }
+  leave(id) {
+    if (!this.players.has(id)) return false;
+    this.store.removePlayer(id);
+    return this.players.delete(id);
+  }
+  act(id, action) { return this.store.transfer(id, action); }
   setSkin(id, skin) {
     const player = this.players.get(id);
     if (!player) throw new Error("PLAYER_NOT_FOUND");
@@ -43,19 +51,20 @@ class Room {
     return true;
   }
   snapshot() {
-    return { room: this.code, players: Array.from(this.players.values(), p => ({ ...p })),
-      maxPlayers: MAX_PLAYERS };
+    return { room: this.code, players: Array.from(this.players.values(),
+      p => ({ ...p, inventory: this.store.inventoryOf(p.id) })),
+      maxPlayers: MAX_PLAYERS, store: this.store.snapshot() };
   }
 }
 class RoomManager {
-  constructor() { this.rooms = new Map(); }
+  constructor(options = {}) { this.rooms = new Map(); this.options = options; }
   create() {
     const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     for (let attempts = 0; attempts < 100; attempts++) {
       const bytes = randomBytes(6);
       const code = Array.from(bytes, b => alphabet[b % alphabet.length]).join("");
       if (!this.rooms.has(code)) {
-        const room = new Room(code);
+        const room = new Room(code, this.options);
         this.rooms.set(code, room);
         return room;
       }
