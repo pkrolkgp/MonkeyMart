@@ -4,13 +4,32 @@
 <style>body{margin:0;background:#152c29;color:#fff;font:16px system-ui;text-align:center}canvas{max-width:96vw;background:#e8d8b3;border:5px solid #53765d;border-radius:12px}p{margin:8px}</style>
 <h2>Co-op Market — lokalny prototyp dla dwóch osób</h2>
 <p>Gracz 1: WASD + E · Gracz 2: strzałki + Enter (połączenie przez serwer) · Zbieraj z upraw, uzupełniaj półkę, obsługuj klientów przy kasie.</p>
-<p id="connection" aria-live="polite">Łączenie z serwerem…</p><p id="status" aria-live="polite"></p><canvas id="game" width="800" height="480"></canvas>
+<section id="rooms"><strong>Pokoje w sieci lokalnej</strong><div id="room-list">Wyszukiwanie…</div></section><p id="connection" aria-live="polite">Łączenie z serwerem…</p><p id="status" aria-live="polite"></p><canvas id="game" width="800" height="480"></canvas>
 <script>
 "use strict";
 const canvas=document.querySelector("#game"),ctx=canvas.getContext("2d"),status=document.querySelector("#status");
 let players=[],myId=null,stock=0,coins=0,served=0,customer=0,last=performance.now(),message="Czekam na serwer";
 const held=new Set(), socket=new WebSocket((location.protocol==="https:"?"wss://":"ws://")+location.host);
 const connection=document.querySelector("#connection");
+const roomList=document.querySelector("#room-list");
+async function refreshRooms(){
+ try{
+  const response=await fetch('/api/lan-rooms',{cache:'no-store'});
+  if(!response.ok)throw Error('HTTP '+response.status);
+  const data=await response.json();
+  roomList.replaceChildren();
+  if(!Array.isArray(data.rooms)||!data.rooms.length){roomList.textContent="Nie znaleziono innych pokoi LAN";return}
+  for(const room of data.rooms){
+   if(!room||typeof room.address!=="string"||!Number.isInteger(room.port)||room.port<1||room.port>65535)continue;
+   const link=document.createElement('a');
+   link.href='http://'+room.address+':'+room.port+'/';
+   link.textContent=(room.name||'Pokój')+' ('+room.players+'/2) — '+room.address;
+   link.style.display='block';link.rel='noreferrer';
+   roomList.append(link);
+  }
+ }catch{roomList.textContent="Lista LAN niedostępna (uruchom grę przez serwer Node.js)"}
+}
+refreshRooms();setInterval(refreshRooms,2500);
 socket.addEventListener("open",()=>connection.textContent="Połączono z serwerem — otwórz drugą kartę na drugim komputerze w tej samej sieci");
 socket.addEventListener("close",()=>{connection.textContent="Rozłączono — odśwież stronę, aby spróbować ponownie";myId=null});
 socket.addEventListener("message",event=>{let m;try{m=JSON.parse(event.data)}catch{return}
