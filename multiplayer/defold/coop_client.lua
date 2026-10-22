@@ -9,7 +9,7 @@ function Client.new(options)
         url = options.url, room = options.room,
         name = options.name or "Gracz", skin = options.skin or "monkey1",
         on_event = options.on_event, connection = nil, connected = false,
-        player_id = nil, room_code = nil, move_seq = 0, action_seq = 0,
+        player_id = nil, room_code = nil, move_seq = 0, action_seq = 0, purchase_seq = 0,
     }, Client)
 end
 
@@ -72,6 +72,16 @@ function Client:transfer(action, item, quantity)
     local requestId = "act-" .. tostring(self.action_seq)
     if self:send({type="action", action=action, item=item, quantity=quantity,
                   requestId=requestId}) then
+        return requestId
+    end
+    return nil
+end
+
+function Client:purchase(upgrade)
+    if not self.player_id then return nil end
+    self.purchase_seq = self.purchase_seq + 1
+    local requestId = "buy-" .. tostring(self.purchase_seq)
+    if self:send({type="purchase", upgrade=upgrade, requestId=requestId}) then
         return requestId
     end
     return nil

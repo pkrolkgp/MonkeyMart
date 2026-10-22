@@ -4,10 +4,14 @@ const { WebSocketServer, WebSocket } = require("ws");
 const { RoomManager } = require("./room");
 
 function startServer(options = {}) {
-  const manager = new RoomManager({ initialStock: options.initialStock || {} });
+  const manager = new RoomManager({
+    initialStock: options.initialStock === undefined ? {} : options.initialStock,
+    initialBalance: options.initialBalance === undefined ? 0 : options.initialBalance,
+    upgradePrices: options.upgradePrices === undefined ? {} : options.upgradePrices,
+  });
   const httpServer = http.createServer((req, res) => {
     const body = JSON.stringify({ service: "monkeymart-coop-transport", status: "ok",
-      note: "Transport and shared-inventory prototype: original Monkey Mart is not integrated." });
+      note: "Transport, shared-inventory and wallet prototype: original Monkey Mart is not integrated." });
     res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
     res.end(body);
   });
@@ -55,6 +59,13 @@ function startServer(options = {}) {
           const result = socket.room.act(socket.playerId, request);
           send(socket, { type: "action_result", ...result });
           if (!result.duplicate) broadcast(socket.room, { type: "store_changed", ...result });
+        } else if (type === "purchase") {
+          if (!socket.room) throw new Error("JOIN_FIRST");
+          const result = socket.room.purchase(socket.playerId, request);
+          send(socket, { type: "purchase_result", ...result });
+          if (!result.duplicate) broadcast(socket.room, {
+            type: "economy_changed", ...socket.room.economy.snapshot(),
+          });
         } else if (type === "snapshot") {
           if (!socket.room) throw new Error("JOIN_FIRST");
           send(socket, { type: "snapshot", ...socket.room.snapshot() });

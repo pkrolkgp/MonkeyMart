@@ -1,6 +1,7 @@
 "use strict";
 const { randomBytes, randomUUID } = require("node:crypto");
 const { Store } = require("./store");
+const { Economy } = require("./economy");
 const MAX_PLAYERS = 4;
 const SKINS = new Set(Array.from({ length: 17 }, (_, i) => "monkey" + (i + 1)));
 
@@ -14,24 +15,28 @@ function finiteCoord(number) {
   return typeof number === "number" && Number.isFinite(number) && Math.abs(number) <= 100000;
 }
 class Room {
-  constructor(code, { initialStock = {} } = {}) {
+  constructor(code, { initialStock = {}, initialBalance = 0, upgradePrices = {} } = {}) {
     this.code = code;
     this.players = new Map();
     this.store = new Store({ initialStock });
+    this.economy = new Economy({ initialBalance, upgradePrices });
   }
   join({ name = "Gracz", skin = "monkey1" } = {}) {
     if (this.players.size >= MAX_PLAYERS) throw new Error("ROOM_FULL");
     const player = { id: randomUUID(), name: asName(name), skin: asSkin(skin), x: 0, y: 0, seq: -1 };
     this.store.addPlayer(player.id);
+    this.economy.addPlayer(player.id);
     this.players.set(player.id, player);
     return player;
   }
   leave(id) {
     if (!this.players.has(id)) return false;
     this.store.removePlayer(id);
+    this.economy.removePlayer(id);
     return this.players.delete(id);
   }
   act(id, action) { return this.store.transfer(id, action); }
+  purchase(id, request) { return this.economy.buy(id, request); }
   setSkin(id, skin) {
     const player = this.players.get(id);
     if (!player) throw new Error("PLAYER_NOT_FOUND");
@@ -53,7 +58,8 @@ class Room {
   snapshot() {
     return { room: this.code, players: Array.from(this.players.values(),
       p => ({ ...p, inventory: this.store.inventoryOf(p.id) })),
-      maxPlayers: MAX_PLAYERS, store: this.store.snapshot() };
+      maxPlayers: MAX_PLAYERS, store: this.store.snapshot(),
+      economy: this.economy.snapshot() };
   }
 }
 class RoomManager {

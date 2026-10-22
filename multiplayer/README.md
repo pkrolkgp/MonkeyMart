@@ -46,3 +46,24 @@ Zaufana część serwera musi skonfigurować katalog i stan początkowy przez `s
 
 Przykładowe żądanie: `{"type":"action","action":"collect","item":"banana","quantity":1,"requestId":"collect-42"}`.
 Serwer odpowiada `action_result`, a pozostałym klientom wysyła `store_changed`; po rozłączeniu może wysłać `store_snapshot`. Serwer nadal nie waliduje odległości gracza od towaru, animacji, klientów, cen ani kolizji. Nie należy wykorzystywać tego jako gotowego mechanizmu zapobiegającego oszustwom.
+
+## Autorytatywna wspólna kasa i jednorazowe ulepszenia (prototyp)
+
+Zaufana konfiguracja serwera może ustawić `startServer({
+  initialBalance: 100, upgradePrices: { shelf: 30, machine: 60 }
+})`.
+Domyślnie saldo wynosi 0, a katalog ulepszeń jest pusty. Tylko serwer ustala
+saldo początkowe i ceny. Klient nie może dopisać pieniędzy ani zmienić ceny.
+Maksymalnie 64 różne ulepszenia, każde można kupić **raz na pokój**.
+
+Wiadomość klienta: `{"type":"purchase","upgrade":"shelf","requestId":"buy-1"}`.
+Kupujący dostaje `purchase_result` z ceną, saldem, rewizją i flagą `duplicate`;
+pozostali otrzymują `economy_changed`. `welcome` i `snapshot` zawierają
+`economy: {revision,balance,upgradePrices,purchasedUpgrades}`. Powtórzenie
+udanego żądania nie wydaje pieniędzy drugi raz; przy jednoczesnych zakupach
+serwer odrzuca drugi zakup już wykupionego ulepszenia lub zakup bez środków.
+Lua bridge udostępnia `client:purchase("shelf")`.
+
+**Ograniczenia:** brak zarabiania, cen oryginalnej gry, głosowania nad zakupami,
+trwałego zapisu, uprawnień graczy i integracji z oryginalną rozgrywką. Ten kod
+to samodzielny prototyp protokołu i ekonomii, a nie gotowa gra.
