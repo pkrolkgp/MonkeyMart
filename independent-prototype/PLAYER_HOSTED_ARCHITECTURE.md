@@ -1,6 +1,6 @@
 # Player-hosted multiplayer architecture (independent prototype)
 
-Status: design and standalone LAN-discovery/migration primitives only. **Not yet integrated into the browser gameplay.**
+Status: UDP LAN announcements are now emitted by the standalone Node game server, but the browser still has no LAN room browser and host migration is not implemented.
 
 ## Responsibilities
 - **Game host:** the creator runs the authoritative simulation and owns a versioned state snapshot. Other players connect directly to that host.
@@ -20,3 +20,6 @@ The existing `independent-prototype/server.mjs` remains a dedicated authoritativ
 3. Reconnect and duplicate/out-of-order messages cannot duplicate purchases or sales.
 4. Public directory lists only opted-in rooms and does not receive authoritative game state.
 5. CI includes integration tests for host migration, LAN discovery and disconnect/reconnect.
+
+## LAN discovery now implemented (partial)
+Starting `node server.mjs` announces the local room via UDP multicast 239.255.42.87:41287 (TTL 1). `lan-discovery.mjs` can receive room advertisements without contacting the internet. On another Mac, a native Node process must use `createLanDiscovery({onRooms})` to show discovered rooms. The existing browser client still needs a room-selection UI or native companion. Multicast may be blocked by guest Wi-Fi, AP isolation, firewalls or routers; discovery is best-effort, not a guarantee of every room. This is not host migration: the Node server is still authoritative and exiting it ends the game.
