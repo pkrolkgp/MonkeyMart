@@ -1,0 +1,30 @@
+name: Monkey Mart - restore original LiveUpdate scenes
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/recover_liveupdate_ci.py'
+      - 'tools/defold-protos/**'
+      - 'tools/audit_liveupdate.py'
+      - '.github/workflows/recovery-liveupdate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  recover-scenes:
+    name: Decode and validate all seven original scenes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install protocol buffer compiler
+        run: sudo apt-get update -qq && sudo apt-get install -y protobuf-compiler
+      - name: Decode original assets and restore collection source
+        run: python3 tools/recover_liveupdate_ci.py
+      - name: Validate no recovered game resources were staged for publication
+        if: always()
+        run: |
+          git status --short
+          test ! -d build/liveupdate-test || test -f build/liveupdate-test/audit.json
