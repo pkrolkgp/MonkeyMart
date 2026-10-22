@@ -2,6 +2,8 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
+import { randomUUID } from 'node:crypto';
+import { createLanDiscovery } from './lan-discovery.mjs';
 
 const port = Number(process.env.PORT || 8080);
 const html = fileURLToPath(new URL('./index.html', import.meta.url));
@@ -60,8 +62,19 @@ export function startServer(listenPort = port) {
   });
   const timer = setInterval(() => { room.spawn(); broadcast(); }, 5000);
   server.on('close', () => clearInterval(timer));
-  server.listen(listenPort);
-  return { server, wss, room };
+  const roomId = randomUUID();
+  let discovery;
+  server.listen(listenPort, () => {
+    const actualPort = server.address().port;
+    discovery = createLanDiscovery({ room: { id: roomId, name: process.env.ROOM_NAME || 'Co-op Market', port: actualPort, players: room.players.size } });
+  });
+  // Update the advertised occupancy whenever the room changes.
+  const updateAdvertisedRoom = () => {
+    if (discovery) discovery.room = { ...discovery.room, players: room.players.size };
+  };
+  wss.on('connection', ws => { updateAdvertisedRoom(); ws.on('close', updateAdvertisedRoom); });
+  server.on('close', () => discovery?.close());
+  return { server, wss, room, roomId };
 }
 if (process.argv[1] && fileURLToPath(import.meta.url) === fileURLToPath(new URL('file://' + process.argv[1]))) {
   startServer();
