@@ -1,0 +1,24 @@
+name: Temporary Spine converter Linux tool
+on:
+  push:
+    paths:
+      - '.github/workflows/temp-spine-convert.yml'
+permissions:
+  contents: read
+jobs:
+  compile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - run: git clone --depth 1 https://github.com/wang606/SpineSkeletonDataConverter.git spine-src
+      - name: Patch missing sstream and build
+        run: |
+          sed -i '1i#include <sstream>' spine-src/src/common.cpp
+          cmake -S spine-src -B spine-src/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build spine-src/build --target SpineSkeletonDataConverter -j 3
+          file spine-src/build/SpineSkeletonDataConverter
+      - uses: actions/upload-artifact@v4
+        with:
+          name: spine-converter-linux-cli
+          path: spine-src/build/SpineSkeletonDataConverter
+          retention-days: 1
