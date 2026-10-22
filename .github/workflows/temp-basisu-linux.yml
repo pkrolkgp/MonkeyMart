@@ -1,0 +1,25 @@
+name: Temporary open-source Linux BasisU decoder
+on:
+  push:
+    paths:
+      - '.github/workflows/temp-basisu-linux.yml'
+permissions:
+  contents: read
+jobs:
+  compile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout external Basis Universal open-source release
+        run: git clone --depth 1 --branch v2_50 https://github.com/BinomialLLC/basis_universal.git basisu-src
+      - name: Build Linux CLI
+        run: |
+          cmake -S basisu-src -B basisu-src/build -DCMAKE_BUILD_TYPE=Release -DBASISU_EXAMPLES=OFF -DBASISU_ZSTD=OFF -DBASISU_DISABLE_ANDROID_ASTC_DECOMP=ON
+          cmake --build basisu-src/build --target basisu -j 3
+          file basisu-src/bin/basisu
+          basisu-src/bin/basisu -version || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: open-source-basisu-linux-cli
+          path: basisu-src/bin/basisu
+          retention-days: 1
