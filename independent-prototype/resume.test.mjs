@@ -31,7 +31,8 @@ test('reconnecting to restored room requires original player token', async t => 
  const resumed = await connect(url + '?player=' + id + '&token=' + encodeURIComponent(resumeToken));
  assert.equal(resumed.message.id, id);
  assert.equal(resumed.message.resumeToken, resumeToken);
- const unauthorized = await connect(url + '?player=' + id + '&token=wrong');
- assert.notEqual(unauthorized.message.id, id);
- resumed.ws.terminate(); unauthorized.ws.terminate(); initial.ws.terminate();
+ const unauthorized = new WebSocket(url + '?player=' + id + '&token=wrong');
+ const closed = new Promise((resolve, reject) => { unauthorized.once('close', code => resolve(code)); unauthorized.once('error', reject); });
+ assert.equal(await closed, 1008);
+ resumed.ws.terminate(); initial.ws.terminate();
 });
