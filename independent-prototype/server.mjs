@@ -35,7 +35,14 @@ export function makeRoom() {
 }
 export function startServer(listenPort = port) {
   const room = makeRoom();
+  let discovery;
   const server = createServer(async (req, res) => {
+    if (req.url === '/api/lan-rooms') {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-store');
+      res.end(JSON.stringify({ rooms: discovery?.list() ?? [] }));
+      return;
+    }
     if (req.url !== '/' && req.url !== '/index.html') { res.writeHead(404); res.end(); return; }
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Cache-Control', 'no-store');
@@ -63,7 +70,6 @@ export function startServer(listenPort = port) {
   const timer = setInterval(() => { room.spawn(); broadcast(); }, 5000);
   server.on('close', () => clearInterval(timer));
   const roomId = randomUUID();
-  let discovery;
   server.listen(listenPort, () => {
     const actualPort = server.address().port;
     discovery = createLanDiscovery({ room: { id: roomId, name: process.env.ROOM_NAME || 'Co-op Market', port: actualPort, players: room.players.size } });
