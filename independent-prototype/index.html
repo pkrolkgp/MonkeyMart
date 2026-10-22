@@ -3,24 +3,31 @@
 <title>Co-op Market — niezależny prototyp</title>
 <style>body{margin:0;background:#152c29;color:#fff;font:16px system-ui;text-align:center}canvas{max-width:96vw;background:#e8d8b3;border:5px solid #53765d;border-radius:12px}p{margin:8px}</style>
 <h2>Co-op Market — lokalny prototyp dla dwóch osób</h2>
-<p>Gracz 1: WASD + E · Gracz 2: strzałki + Enter · Zbieraj z upraw, uzupełniaj półkę, obsługuj klientów przy kasie.</p>
-<p id="status" aria-live="polite"></p><canvas id="game" width="800" height="480"></canvas>
+<p>Gracz 1: WASD + E · Gracz 2: strzałki + Enter (połączenie przez serwer) · Zbieraj z upraw, uzupełniaj półkę, obsługuj klientów przy kasie.</p>
+<p id="connection" aria-live="polite">Łączenie z serwerem…</p><p id="status" aria-live="polite"></p><canvas id="game" width="800" height="480"></canvas>
 <script>
 "use strict";
 const canvas=document.querySelector("#game"),ctx=canvas.getContext("2d"),status=document.querySelector("#status");
-const players=[{x:150,y:230,c:"#3b82f6",carry:0,keys:["KeyW","KeyS","KeyA","KeyD"],action:"KeyE"},{x:210,y:230,c:"#ed6a5a",carry:0,keys:["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"],action:"Enter"}];
-const held=new Set();let stock=0,coins=0,served=0,customer=0,last=performance.now(),message="Zbierz produkty z zielonego pola";
+let players=[],myId=null,stock=0,coins=0,served=0,customer=0,last=performance.now(),message="Czekam na serwer";
+const held=new Set(), socket=new WebSocket((location.protocol==="https:"?"wss://":"ws://")+location.host);
+const connection=document.querySelector("#connection");
+socket.addEventListener("open",()=>connection.textContent="Połączono z serwerem — otwórz drugą kartę na drugim komputerze w tej samej sieci");
+socket.addEventListener("close",()=>{connection.textContent="Rozłączono — odśwież stronę, aby spróbować ponownie";myId=null});
+socket.addEventListener("message",event=>{let m;try{m=JSON.parse(event.data)}catch{return}
+if(m.type==="welcome")myId=m.id;
+if(m.type==="snapshot"){players=m.players.map(p=>({...p,c:p.id===1?"#3b82f6":"#ed6a5a"}));stock=m.state.stock;coins=m.state.coins;served=m.state.served;customer=m.state.customers}});
+function send(m){if(socket.readyState===WebSocket.OPEN)socket.send(JSON.stringify(m))}
 const zones=[{x:40,y:45,w:170,h:125,c:"#79ae68",label:"UPRAWA"},{x:330,y:65,w:150,h:110,c:"#b78c58",label:"PÓŁKA"},{x:615,y:65,w:145,h:110,c:"#d6a967",label:"KASA"}];
 function near(p,z){const x=Math.max(z.x,Math.min(p.x,z.x+z.w)),y=Math.max(z.y,Math.min(p.y,z.y+z.h));return Math.hypot(p.x-x,p.y-y)<32}
-function act(p){if(near(p,zones[0])){if(p.carry<3){p.carry++;message="Zebrano produkt"}else message="Pełne ręce (maks. 3)"}else if(near(p,zones[1])){if(p.carry){stock+=p.carry;p.carry=0;message="Uzupełniono półkę"}else message="Najpierw zbierz produkty"}else if(near(p,zones[2])){if(stock>0&&customer>0){stock--;customer--;coins+=5;served++;message="Obsłużono klienta: +5 monet"}else message="Potrzebujesz produktu na półce i klienta"}}
-window.addEventListener("keydown",e=>{if([...players.flatMap(p=>[...p.keys,p.action])].includes(e.code))e.preventDefault();if(!e.repeat){for(const p of players)if(e.code===p.action)act(p)}held.add(e.code)});
+window.addEventListener("keydown",e=>{if(["KeyW","KeyS","KeyA","KeyD","KeyE","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Enter"].includes(e.code))e.preventDefault();if(!e.repeat&&["KeyE","Enter"].includes(e.code))send({type:"act"});held.add(e.code)});
 window.addEventListener("keyup",e=>held.delete(e.code));window.addEventListener("blur",()=>held.clear());
-let spawn=0;
-function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;spawn+=dt;if(spawn>=5){spawn=0;customer=Math.min(5,customer+1)}
-for(const p of players){let dx=Number(held.has(p.keys[3]))-Number(held.has(p.keys[2])),dy=Number(held.has(p.keys[1]))-Number(held.has(p.keys[0]));const m=Math.hypot(dx,dy)||1;p.x=Math.max(14,Math.min(786,p.x+dx/m*180*dt));p.y=Math.max(14,Math.min(466,p.y+dy/m*180*dt))}
+function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;
+if(myId!==null){const keys=myId===1?["KeyW","KeyS","KeyA","KeyD"]:["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"];
+const dx=Number(held.has(keys[3]))-Number(held.has(keys[2])),dy=Number(held.has(keys[1]))-Number(held.has(keys[0]));
+if(dx||dy)send({type:"move",dx,dy,dt});}
 ctx.clearRect(0,0,800,480);for(const z of zones){ctx.fillStyle=z.c;ctx.fillRect(z.x,z.y,z.w,z.h);ctx.fillStyle="#17251d";ctx.font="bold 20px system-ui";ctx.fillText(z.label,z.x+12,z.y+35)}
 ctx.fillStyle="#263b31";ctx.font="19px system-ui";ctx.fillText("Klienci: "+customer,610,215);ctx.fillText("Na półce: "+stock,330,215);
-players.forEach((p,i)=>{ctx.fillStyle=p.c;ctx.beginPath();ctx.arc(p.x,p.y,17,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.font="bold 15px system-ui";ctx.fillText(String(i+1),p.x-5,p.y+5);ctx.fillStyle="#263b31";ctx.fillText("Niesie: "+p.carry,p.x-30,p.y-26)});
+players.forEach((p,i)=>{ctx.fillStyle=p.c;ctx.beginPath();ctx.arc(p.x,p.y,17,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.font="bold 15px system-ui";ctx.fillText(String(p.id),p.x-5,p.y+5);ctx.fillStyle="#263b31";ctx.fillText("Niesie: "+p.carry,p.x-30,p.y-26)});
 status.textContent="Monety: "+coins+" | Obsłużeni: "+served+" | "+message;requestAnimationFrame(frame)}
 requestAnimationFrame(frame);
 </script></html>
