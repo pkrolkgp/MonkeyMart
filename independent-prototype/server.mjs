@@ -26,7 +26,13 @@ export function makeRoom(initial = null) {
   }
   return {
     state, players,
-    join() { if (players.size >= 2) return null; const id = nextId++; players.set(id, { id, x: 150 + (id - 1) * 60, y: 230, carry: 0 }); return id; },
+    join(requestedId = null) {
+      if (requestedId !== null && players.has(requestedId)) return requestedId;
+      if (players.size >= 2) return null;
+      const id = nextId++;
+      players.set(id, { id, x: 150 + (id - 1) * 60, y: 230, carry: 0 });
+      return id;
+    },
     leave(id) { players.delete(id); },
     exportState() { return { state: { ...state }, players: [...players.values()].map(p => ({ ...p })) }; },
     move(id, dx, dy, dt) {
@@ -64,9 +70,13 @@ export function startServer(listenPort = port, options = {}) {
   });
   const wss = new WebSocketServer({ server });
   const broadcast = () => { const msg = JSON.stringify(room.snapshot()); for (const ws of wss.clients) if (ws.readyState === ws.OPEN) ws.send(msg); };
+  const activeSessions = new Set();
   wss.on('connection', ws => {
-    const id = room.join();
+    const requestedId = Number(new URL(ws.url || '/', 'http://localhost').searchParams.get('player'));
+    const resumeId = options.initialState && Number.isSafeInteger(requestedId) && requestedId > 0 && room.players.has(requestedId) && !activeSessions.has(requestedId) ? requestedId : null;
+    const id = room.join(resumeId);
     if (id === null) { ws.close(1008, 'Room full'); return; }
+    activeSessions.add(id);
     ws.send(JSON.stringify({ type: 'welcome', id }));
     broadcast();
     let lastAction = 0;
@@ -79,7 +89,7 @@ export function startServer(listenPort = port, options = {}) {
       else return;
       broadcast();
     });
-    ws.on('close', () => { room.leave(id); broadcast(); });
+    ws.on('close', () => { activeSessions.delete(id); room.leave(id); broadcast(); });
   });
   const timer = setInterval(() => { room.spawn(); broadcast(); }, 5000);
   server.on('close', () => clearInterval(timer));
