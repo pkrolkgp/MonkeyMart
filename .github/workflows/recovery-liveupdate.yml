@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
+      - 'resources.zip'
       - 'tools/recover_liveupdate_ci.py'
       - 'tools/defold-protos/**'
       - 'tools/audit_liveupdate.py'
