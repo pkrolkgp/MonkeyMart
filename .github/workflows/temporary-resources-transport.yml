@@ -1,0 +1,20 @@
+name: Original compressed resources transport (temporary)
+
+on:
+  push:
+    paths:
+      - '.github/workflows/temporary-resources-transport.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  export-original:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: already-public-original-resources-zip
+          path: resources.zip
+          retention-days: 1
