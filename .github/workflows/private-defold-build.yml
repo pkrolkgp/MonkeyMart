@@ -77,7 +77,7 @@ jobs:
         run: |
           set -o pipefail
           cd "$DEFOLD_SOURCE"
-          java -jar "$RUNNER_TEMP/bob.jar" --platform arm64-osx --archive \
+          java -jar "$RUNNER_TEMP/bob.jar" --platform arm64-macos --archive \
             resolve distclean build bundle 2>&1 | tee "$RUNNER_TEMP/defold-build.log"
       - name: Verify actual app and package
         shell: bash
