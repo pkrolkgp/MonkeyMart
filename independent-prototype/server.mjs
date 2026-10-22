@@ -11,6 +11,7 @@ export function makeRoom(initial = null) {
   const players = new Map();
   const state = { stock: 0, coins: 0, served: 0, customers: 0 };
   let nextId = 1;
+  const resumeTokens = new Map();
   if (initial) {
     if (!initial.state || !Array.isArray(initial.players) || initial.players.length > 2) throw new TypeError('Invalid room snapshot');
     for (const key of ['stock', 'coins', 'served', 'customers']) {
@@ -21,6 +22,7 @@ export function makeRoom(initial = null) {
     for (const p of initial.players) {
       if (!Number.isSafeInteger(p.id) || p.id < 1 || !Number.isFinite(p.x) || !Number.isFinite(p.y) || !Number.isSafeInteger(p.carry) || p.carry < 0 || p.carry > 3 || players.has(p.id)) throw new TypeError('Invalid player snapshot');
       players.set(p.id, { id: p.id, x: Math.max(14, Math.min(786, p.x)), y: Math.max(14, Math.min(466, p.y)), carry: p.carry });
+      if (typeof p.resumeToken === 'string' && /^[a-f0-9-]{36}$/.test(p.resumeToken)) resumeTokens.set(p.id, p.resumeToken);
       nextId = Math.max(nextId, p.id + 1);
     }
   }
@@ -31,10 +33,12 @@ export function makeRoom(initial = null) {
       if (players.size >= 2) return null;
       const id = nextId++;
       players.set(id, { id, x: 150 + (id - 1) * 60, y: 230, carry: 0 });
+      resumeTokens.set(id, randomUUID());
       return id;
     },
-    leave(id) { players.delete(id); },
-    exportState() { return { state: { ...state }, players: [...players.values()].map(p => ({ ...p })) }; },
+    leave(id) { players.delete(id); resumeTokens.delete(id); },
+    tokenFor(id) { return resumeTokens.get(id) ?? null; },
+    exportState() { return { state: { ...state }, players: [...players.values()].map(p => ({ ...p, resumeToken: resumeTokens.get(p.id) })) }; },
     move(id, dx, dy, dt) {
       const p = players.get(id); if (!p) return;
       dx = Math.max(-1, Math.min(1, Number(dx) || 0)); dy = Math.max(-1, Math.min(1, Number(dy) || 0));
@@ -72,12 +76,14 @@ export function startServer(listenPort = port, options = {}) {
   const broadcast = () => { const msg = JSON.stringify(room.snapshot()); for (const ws of wss.clients) if (ws.readyState === ws.OPEN) ws.send(msg); };
   const activeSessions = new Set();
   wss.on('connection', ws => {
-    const requestedId = Number(new URL(ws.url || '/', 'http://localhost').searchParams.get('player'));
-    const resumeId = options.initialState && Number.isSafeInteger(requestedId) && requestedId > 0 && room.players.has(requestedId) && !activeSessions.has(requestedId) ? requestedId : null;
+    const params = new URL(ws.url || '/', 'http://localhost').searchParams;
+    const requestedId = Number(params.get('player'));
+    const suppliedToken = params.get('token');
+    const resumeId = options.initialState && Number.isSafeInteger(requestedId) && requestedId > 0 && typeof suppliedToken === 'string' && suppliedToken.length === 36 && suppliedToken === room.tokenFor(requestedId) && !activeSessions.has(requestedId) ? requestedId : null;
     const id = room.join(resumeId);
     if (id === null) { ws.close(1008, 'Room full'); return; }
     activeSessions.add(id);
-    ws.send(JSON.stringify({ type: 'welcome', id }));
+    ws.send(JSON.stringify({ type: 'welcome', id, resumeToken: room.tokenFor(id) }));
     broadcast();
     let lastAction = 0;
     ws.on('message', raw => {
