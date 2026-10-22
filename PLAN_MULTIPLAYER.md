@@ -268,3 +268,14 @@ Z logu użytkownika `02_ODBUDUJ_PROJEKT_DEFOLD.command`:
 3. W prywatnym pliku ZIP w konwersacji udostępniono pomocniczy `03_NAPRAW_I_KOMPILUJ.command`, który poprawia brakujące pola (bez ponownej ekstrakcji i bez nadpisania pozostałego kodu), pobiera Bob 1.12.1, używa OpenJDK 25 i zapisuje log `BUILD-1121.log`. Kod łatki dla modeli sprawdzono lokalnym testem (5 modeli, 3 poprawki, ponowne uruchomienie bez zmian).
 
 **Stan:** zgodność rozszerzenia Spine 3.0.0 i odzyskanych starych zasobów z Defold 1.12.1 wymaga jeszcze rzeczywistego sprawdzenia kompilacji na Macu. Nie ogłaszamy sukcesu kompilacji przed otrzymaniem logu. Projekt nadal nie zawiera działającego połączenia pełnej gry z multiplayerem.
+
+## 18. CI - odzysk zasobów LiveUpdate (22 października 2026)
+
+- [x] Dodano do GitHub Actions test konwersji rzeczywistych zasobów z publicznego `resources.zip`: workflow `.github/workflows/recovery-liveupdate.yml`, PR #3.
+- [x] **Test zakończony sukcesem**: `https://github.com/pkrolkgp/MonkeyMart/actions/runs/39861195012`. Zdekodowano 33 zasoby, pominięto 2 zaszyfrowane skrypty, przywrócono 7/7 źródłowych kolekcji `.collection` i nie zanotowano błędów.
+- [x] Workflow uruchamia się automatycznie, gdy zmieni się `resources.zip` lub skrypt konwersji, a także z poziomu GitHub Actions; do jego wykonania nie jest potrzebny Mac użytkownika.
+- [x] Lokalny test statycznego składania projektu w izolowanym środowisku na oryginalnych archiwach: źródła i deskryptory 9 modeli/obiektów Spine oraz 36 wyzwalaczy wejścia odtworzono poprawnie. Ten test był **bez pikseli i bez Bob**, ponieważ środowisko nie miało dekodera BasisU ani kompilatora Defold.
+- [ ] **Wciąż niezweryfikowane:** zbudowanie pełnego źródłowego projektu w Defold Bob 1.14.0, uruchomienie rozgrywki i integracja multiplayer. GitHub Actions dysponuje wyłącznie opublikowanymi skompilowanymi archiwami. Nie może zbudować prywatnego projektu odzyskanego z ZIP, dopóki kompletne źródła nie zostaną dostarczone bezpiecznym prywatnym kanałem albo nie powstanie pełen ekstraktor generujący je w trakcie CI.
+- [ ] Przygotować zabezpieczony/tymczasowy build całego projektu, który zwróci samą diagnostykę i nie opublikuje oryginalnych grafik ani zdekompilowanego kodu jako artefaktu.
+
+**Zasada:** nie wymagamy kolejnych ręcznych testów tej samej naprawy przez użytkownika; wyniki ze wszystkich dostępnych testów CI muszą być sprawdzone przed uznaniem etapu za ukończony.
