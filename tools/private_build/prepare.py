@@ -87,7 +87,7 @@ def prepare(project, source):
             blockers.append(path + ": invalid Spine JSON")
             continue
         versions[name] = version
-        if not version.startswith("4.2."):
+        if not isinstance(version, str) or not version.startswith("4.2."):
             blockers.append(path + ": requires Spine 4.2, found " + version)
     skins_added = 0
     for model in project.rglob("*.spinemodel"):
