@@ -15,6 +15,27 @@ class TestPrivateProjectBuild(unittest.TestCase):
                 zipfile.writestr("Example/game.project", "[project]")
             self.assertEqual(validate_source_zip(archive), "Example/game.project")
 
+    def test_non_string_spine_version_is_reported(self):
+        with TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            project = base / "project"
+            project.mkdir()
+            (project / "game.project").write_text(
+                "[bootstrap]\\nmain_collection = /main/start.collectionc\\n"
+                "render = /main/fx.renderc\\n"
+                "[input]\\ngame_binding = /input/a.input_bindingc\\n"
+            )
+            for name in ("main/start.collection", "main/fx.render", "input/a.input_binding"):
+                f = project / name
+                f.parent.mkdir(parents=True, exist_ok=True)
+                f.write_text("synthetic")
+            for name in SPINE:
+                f = project / f"images/spine/{name}.spinejson"
+                f.parent.mkdir(parents=True, exist_ok=True)
+                f.write_text(json.dumps({"skeleton": {"spine": 42 if name == "animals" else "4.2.11"}}))
+            report = prepare(project, None)
+            self.assertTrue(any("requires Spine 4.2" in issue for issue in report["blockers"]))
+
     def test_defold_resource_suffixes(self):
         with TemporaryDirectory() as tmp:
             f = Path(tmp)/"game.project"
