@@ -54,7 +54,7 @@ class TestPrivateProjectBuild(unittest.TestCase):
                 f=project/path; f.parent.mkdir(parents=True, exist_ok=True); f.write_text('images: "/image.png"\n')
             self.assertFalse(prepare(project,source)["blockers"])
             broken = project/"images/spine/animals.spinejson"
-            broken.write_text(json.dumps({"skeleton":{"spine":42}}))
+            broken.write_text(json.dumps({"skeleton":{"spine":"4.1.0"}}))
             self.assertTrue(any("requires Spine 4.2" in issue for issue in prepare(project,source)["blockers"]))
 
 if __name__=="__main__":
