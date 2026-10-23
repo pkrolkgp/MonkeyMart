@@ -4,8 +4,17 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from prepare import prepare, fix_project, SCENES, ATLASES, SPINE
+from validate_source_zip import validate_source_zip
+from zipfile import ZipFile
 
 class TestPrivateProjectBuild(unittest.TestCase):
+    def test_source_zip_preflight(self):
+        with TemporaryDirectory() as tmp:
+            archive = Path(tmp) / "synthetic.zip"
+            with ZipFile(archive, "w") as zipfile:
+                zipfile.writestr("Example/game.project", "[project]")
+            self.assertEqual(validate_source_zip(archive), "Example/game.project")
+
     def test_defold_resource_suffixes(self):
         with TemporaryDirectory() as tmp:
             f = Path(tmp)/"game.project"
