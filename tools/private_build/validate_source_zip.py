@@ -18,7 +18,9 @@ def validate_source_zip(path):
         seen, projects, total = set(), [], 0
         for entry in entries:
             name = entry.filename
-            if not name or name.startswith('/') or '\\' in name or re.match(r'^[A-Za-z]:', name):
+            if (not name or name.startswith('/') or '\\' in name or
+                    any(ord(char) < 32 or ord(char) == 127 for char in name) or
+                    re.match(r'^[A-Za-z]:', name)):
                 raise ValueError('Unsafe archive filename')
             parts = name.rstrip('/').split('/')
             if any(part in ('', '.', '..') for part in parts):
