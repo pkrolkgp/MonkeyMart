@@ -53,6 +53,9 @@ class TestPrivateProjectBuild(unittest.TestCase):
                 self.assertIn(path, first["blockers"])
                 f=project/path; f.parent.mkdir(parents=True, exist_ok=True); f.write_text('images: "/image.png"\n')
             self.assertFalse(prepare(project,source)["blockers"])
+            broken = project/"images/spine/animals.spinejson"
+            broken.write_text(json.dumps({"skeleton":{"spine":42}}))
+            self.assertTrue(any("requires Spine 4.2" in issue for issue in prepare(project,source)["blockers"]))
 
 if __name__=="__main__":
     unittest.main()
