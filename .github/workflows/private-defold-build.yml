@@ -51,15 +51,15 @@ jobs:
       - name: Unpack complete private Defold source
         shell: bash
         run: |
-          unzip -q private_inputs/source-project.zip -d "$RUNNER_TEMP/source-stage"
-          if [[ -f "$RUNNER_TEMP/source-stage/game.project" ]]; then
-            echo "DEFOLD_SOURCE=$RUNNER_TEMP/source-stage" >> "$GITHUB_ENV"
-          elif [[ -f "$RUNNER_TEMP/source-stage/MonkeyMart-Oryginalny-Defold/game.project" ]]; then
-            echo "DEFOLD_SOURCE=$RUNNER_TEMP/source-stage/MonkeyMart-Oryginalny-Defold" >> "$GITHUB_ENV"
-          else
-            echo "ERROR: no game.project in private source ZIP" >&2
+          set -euo pipefail
+          project_relative="$(python3 tools/private_build/validate_source_zip.py \
+            private_inputs/source-project.zip --extract-to "$RUNNER_TEMP/source-stage")"
+          source_dir="$RUNNER_TEMP/source-stage/$(dirname "$project_relative")"
+          if [[ ! -f "$source_dir/game.project" ]]; then
+            echo 'ERROR: validated game.project missing after extraction' >&2
             exit 1
           fi
+          echo "DEFOLD_SOURCE=$source_dir" >> "$GITHUB_ENV"
       - name: Fix original paths and validate actual assets
         shell: bash
         run: |
