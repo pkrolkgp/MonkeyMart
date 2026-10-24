@@ -56,6 +56,13 @@ class TestPrivateProjectBuild(unittest.TestCase):
             broken = project/"images/spine/animals.spinejson"
             broken.write_text(json.dumps({"skeleton":{"spine":"4.1.0"}}))
             self.assertTrue(any("requires Spine 4.2" in issue for issue in prepare(project,source)["blockers"]))
+            for malformed in (42, None, {"version": "4.2.11"}, ["4.2.11"]):
+                broken.write_text(json.dumps({"skeleton": {"spine": malformed}}))
+                report = prepare(project, source)
+                self.assertTrue(
+                    any("requires Spine 4.2" in issue for issue in report["blockers"]),
+                    f"Expected a readable blocker for {malformed!r}",
+                )
 
 if __name__=="__main__":
     unittest.main()
