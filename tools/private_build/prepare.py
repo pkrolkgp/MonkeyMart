@@ -88,7 +88,7 @@ def prepare(project, source):
             continue
         versions[name] = version
         if not isinstance(version, str) or not version.startswith("4.2."):
-            blockers.append(path + ": requires Spine 4.2, found " + version)
+            blockers.append(path + ": requires Spine 4.2, found " + repr(version))
     skins_added = 0
     for model in project.rglob("*.spinemodel"):
         text = model.read_text(encoding="utf-8")
