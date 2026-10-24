@@ -2,6 +2,7 @@
 import argparse
 import re
 import stat
+from pathlib import Path
 from pathlib import PurePosixPath
 from zipfile import ZipFile
 
@@ -32,18 +33,58 @@ def validate_source_zip(path):
             kind = stat.S_IFMT(entry.external_attr >> 16)
             if kind not in (0, stat.S_IFREG, stat.S_IFDIR):
                 raise ValueError('ZIP contains a link or special file')
+            if kind == stat.S_IFDIR and not entry.is_dir():
+                raise ValueError('Directory metadata conflicts with ZIP path')
+            if entry.flag_bits & 1:
+                raise ValueError('Encrypted ZIP entries are unsupported')
             total += entry.file_size
             if entry.file_size > MAX_ENTRY or total > MAX_UNCOMPRESSED:
                 raise ValueError('ZIP exceeds safe extraction size')
             if not entry.is_dir() and PurePosixPath(name).name == 'game.project':
                 projects.append(name)
+        # A file cannot simultaneously be a parent directory of another entry.
+        files = {e.filename.casefold() for e in entries if not e.is_dir()}
+        for name in seen:
+            components = name.split('/')
+            if any('/'.join(components[:i]) in files for i in range(1, len(components))):
+                raise ValueError('ZIP file/directory path collision')
         if len(projects) != 1:
             raise ValueError('Expected exactly one game.project')
         return projects[0]
 
 
+def extract_source_zip(archive_path, destination):
+    """Validate first, then extract into a new directory with bounded writes."""
+    project_path = validate_source_zip(archive_path)
+    destination = Path(destination)
+    destination.mkdir(parents=True, exist_ok=False)
+    total_written = 0
+    with ZipFile(archive_path) as archive:
+        for entry in archive.infolist():
+            target = destination.joinpath(*entry.filename.rstrip('/').split('/'))
+            if entry.is_dir():
+                target.mkdir(parents=True, exist_ok=True)
+                continue
+            target.parent.mkdir(parents=True, exist_ok=True)
+            written = 0
+            with archive.open(entry) as source, target.open('xb') as output:
+                while True:
+                    chunk = source.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    written += len(chunk)
+                    total_written += len(chunk)
+                    if written > MAX_ENTRY or total_written > MAX_UNCOMPRESSED:
+                        raise ValueError('ZIP extraction exceeds safe size')
+                    output.write(chunk)
+            if written != entry.file_size:
+                raise ValueError('ZIP entry size mismatch')
+    return project_path
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('archive')
+    parser.add_argument('--extract-to', help='New directory for safe extraction')
     args = parser.parse_args()
-    print(validate_source_zip(args.archive))
+    print(extract_source_zip(args.archive, args.extract_to) if args.extract_to else validate_source_zip(args.archive))
