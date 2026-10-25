@@ -79,14 +79,15 @@ jobs:
           cd "$DEFOLD_SOURCE"
           java -jar "$RUNNER_TEMP/bob.jar" --platform arm64-macos --archive \
             resolve distclean build bundle 2>&1 | tee "$RUNNER_TEMP/defold-build.log"
-      - name: Verify actual app and package
+      - name: Verify actual Apple Silicon app and package
         shell: bash
         run: |
-          APP="$(find "$DEFOLD_SOURCE/build" -type d -name '*.app' -print -quit)"
-          if [[ -z "$APP" ]]; then
-            echo 'ERROR: no .app produced. This is NOT a successful build.' >&2
+          set -euo pipefail
+          if [[ "$(uname -m)" != "arm64" ]]; then
+            echo "ERROR: expected Apple Silicon runner, got $(uname -m)" >&2
             exit 1
           fi
+          APP="$(python3 tools/private_build/verify_bundle.py "$DEFOLD_SOURCE/build")"
           mkdir -p "$GITHUB_WORKSPACE/out"
           ditto -c -k --sequesterRsrc --keepParent "$APP" "$GITHUB_WORKSPACE/out/MonkeyMart-macOS-arm64.zip"
       - name: Publish private compiled app (only after verified build)
