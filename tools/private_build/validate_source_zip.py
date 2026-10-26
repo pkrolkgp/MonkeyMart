@@ -2,6 +2,7 @@
 import argparse
 import re
 import stat
+import unicodedata
 from pathlib import Path
 from pathlib import PurePosixPath
 from zipfile import ZipFile
@@ -9,6 +10,11 @@ from zipfile import ZipFile
 MAX_FILES = 50000
 MAX_UNCOMPRESSED = 3 * 1024**3
 MAX_ENTRY = 1024**3
+
+
+def filesystem_key(path):
+    """Model case-insensitive, canonically equivalent names on macOS filesystems."""
+    return unicodedata.normalize('NFD', path).casefold()
 
 
 def validate_source_zip(path):
@@ -26,7 +32,7 @@ def validate_source_zip(path):
             parts = name.rstrip('/').split('/')
             if any(part in ('', '.', '..') for part in parts):
                 raise ValueError('Unsafe archive path component')
-            key = '/'.join(parts).casefold()
+            key = filesystem_key('/'.join(parts))
             if key in seen:
                 raise ValueError('Duplicate or case-colliding archive path')
             seen.add(key)
@@ -43,7 +49,7 @@ def validate_source_zip(path):
             if not entry.is_dir() and PurePosixPath(name).name == 'game.project':
                 projects.append(name)
         # A file cannot simultaneously be a parent directory of another entry.
-        files = {e.filename.casefold() for e in entries if not e.is_dir()}
+        files = {filesystem_key(e.filename) for e in entries if not e.is_dir()}
         for name in seen:
             components = name.split('/')
             if any('/'.join(components[:i]) in files for i in range(1, len(components))):
