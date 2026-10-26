@@ -34,6 +34,8 @@ def verify_bundle(build_root, inspect_arches=None):
     binary = app / 'Contents' / 'MacOS' / executable_name
     if not binary.is_file() or binary.is_symlink() or binary.stat().st_size == 0:
         raise ValueError(f'Missing, empty or linked app executable: {executable_name}')
+    if not (binary.stat().st_mode & 0o111):
+        raise ValueError(f'App executable lacks execute permission: {executable_name}')
     if inspect_arches is None:
         def inspect_arches(path):
             result = subprocess.run(['lipo', '-archs', str(path)], capture_output=True,
