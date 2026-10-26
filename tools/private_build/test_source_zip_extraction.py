@@ -45,8 +45,8 @@ class TestSafeSourceExtraction(unittest.TestCase):
     def test_canonically_equivalent_unicode_names_rejected(self):
         # APFS/HFS+ can treat composed and decomposed names as equivalent.
         for names in (
-            ('game.project', 'assets/caf\\u00e9.png', 'assets/cafe\\u0301.png'),
-            ('game.project', 'caf\\u00e9/file.png', 'cafe\\u0301/other.png', 'caf\\u00e9'),
+            ('game.project', 'assets/café.png', 'assets/café.png'),
+            ('game.project', 'café/file.png', 'café/other.png', 'café'),
         ):
             with self.subTest(names=names), TemporaryDirectory() as tmp:
                 root = Path(tmp)
