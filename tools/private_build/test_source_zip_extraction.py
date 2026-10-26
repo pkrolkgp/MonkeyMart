@@ -41,6 +41,24 @@ class TestSafeSourceExtraction(unittest.TestCase):
                     extract_source_zip(archive, dest)
                 self.assertFalse(dest.exists())
 
+
+    def test_canonically_equivalent_unicode_names_rejected(self):
+        # APFS/HFS+ can treat composed and decomposed names as equivalent.
+        for names in (
+            ('game.project', 'assets/caf\\u00e9.png', 'assets/cafe\\u0301.png'),
+            ('game.project', 'caf\\u00e9/file.png', 'cafe\\u0301/other.png', 'caf\\u00e9'),
+        ):
+            with self.subTest(names=names), TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                archive = root / 'synthetic.zip'
+                with ZipFile(archive, 'w') as z:
+                    for name in names:
+                        z.writestr(name, 'synthetic')
+                dest = root / 'stage'
+                with self.assertRaisesRegex(ValueError, 'Duplicate|collision'):
+                    extract_source_zip(archive, dest)
+                self.assertFalse(dest.exists())
+
     def test_symlink_is_rejected(self):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
