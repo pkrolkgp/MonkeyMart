@@ -11,6 +11,7 @@ def fake_app(root, name='Sample.app', executable='Game'):
     binary = app / 'Contents' / 'MacOS' / executable
     binary.parent.mkdir(parents=True)
     binary.write_bytes(b'fake executable for mocked lipo')
+    binary.chmod(0o755)
     with (app / 'Contents' / 'Info.plist').open('wb') as stream:
         plistlib.dump({'CFBundleExecutable': executable}, stream)
     return app, binary
@@ -55,6 +56,14 @@ class TestBundleVerification(unittest.TestCase):
                 verify_bundle(root, lambda path: 'x86_64')
             binary.write_bytes(b'')
             with self.assertRaisesRegex(ValueError, 'empty'):
+                verify_bundle(root, lambda path: 'arm64')
+
+    def test_non_executable_binary_rejected(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _, binary = fake_app(root)
+            binary.chmod(0o644)
+            with self.assertRaisesRegex(ValueError, 'execute permission'):
                 verify_bundle(root, lambda path: 'arm64')
 
     def test_symlink_binary_rejected(self):
