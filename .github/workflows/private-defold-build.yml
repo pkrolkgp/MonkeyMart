@@ -90,8 +90,10 @@ jobs:
           APP="$(python3 tools/private_build/verify_bundle.py "$DEFOLD_SOURCE/build")"
           mkdir -p "$GITHUB_WORKSPACE/out"
           ditto -c -k --sequesterRsrc --keepParent "$APP" "$GITHUB_WORKSPACE/out/MonkeyMart-macOS-arm64.zip"
-      - name: Publish private compiled app (only after verified build)
-        if: success()
+      # Private repository visibility does not establish redistribution rights.
+      # Uploading the compiled game requires an explicit owner-controlled opt-in.
+      - name: Publish private compiled app (only when distribution is authorized)
+        if: ${{ success() && github.event.repository.private == true && vars.MONKEYMART_DISTRIBUTION_AUTHORIZED == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: MonkeyMart-macOS-AppleSilicon
